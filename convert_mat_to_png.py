@@ -30,7 +30,7 @@ def main(fpath, save_path):
     """
 
     save_path_image = f'{save_path}/images/'
-    save_path_label = f'{save_path}/labels/'
+    save_path_label = f'{save_path}/multi_label/'
 
     if not os.path.exists(save_path_image):
         os.makedirs(save_path_image)
@@ -57,19 +57,22 @@ def main(fpath, save_path):
 
                 image_slice = nan_to_num(mat_data["images"][:, :, index])
                 image = Image.fromarray(image_slice.astype(np.uint8))
-                image.save(f"{save_path_image}/Subject_{id}_image_{index}.png")
+                if image.mode != 'RGB':
+                    image = image.convert('RGB')
+
+                image.save(f"{save_path_image}/Subject_{id}_{index}.png")
 
                 #Convert the label image to binary label
-                label_slice[label_slice != 0] = 1
-                label = Image.fromarray(label_slice.astype(bool))
-                label.save(f"{save_path_label}/Subject_{id}_label_{index}.png")
+                # label_slice[label_slice != 0] = 1
+                label = Image.fromarray(label_slice.astype(np.uint8))
+                label.save(f"{save_path_label}/Subject_{id}_{index}.png")
 
 
 if __name__ =='__main__':
 
 
     load_path  = Path(f'D:/projects/phd_assignments/ece661/project/archive/2015_BOE_Chiu/2015_BOE_Chiu/')
-    save_path = Path(f'D:/projects/phd_assignments/ece661/project/OCT_images/')
+    save_path = Path(f'D:/projects/phd_assignments/ece661/project/data/')
 
 
     main(load_path, save_path)
