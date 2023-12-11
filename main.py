@@ -18,7 +18,7 @@ from mmengine.runner import Runner
 
 
 data_root = 'data'
-img_dir = 'images_gaussian'
+img_dir = 'images'
 ann_dir = 'labels'
 classes = ('background', 'fluid')
 palette =  [[0, 0, 0], [255,0,0]]
@@ -27,7 +27,7 @@ palette =  [[0, 0, 0], [255,0,0]]
 model_config = 'deeplabv3plus_r50-d8_4xb2-40k_cityscapes-512x1024'
 # mobilenet-v3-d8_lraspp_4xb4-320k_cityscapes-512x1024
 
-save_model_path = '/codebase/work_dirs/' +model_config+ '_image_preprocessed'+ os.sep
+save_model_path = '/codebase/work_dirs/' +model_config+ '_image_freeze'+ os.sep
 if not os.path.exists(save_model_path+model_config):
   os.makedirs(save_model_path+model_config)
 

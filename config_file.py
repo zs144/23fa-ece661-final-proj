@@ -23,7 +23,20 @@ def find_pth_files(path):
     # Return the list of full path names
     return pth_files
 
+def freeze_model_backbone(model):
+    for param in model.backbone.parameters():
+        param.requires_grad = False
+
+# Modify the train_cfg or/and test_cfg
+# Here we add a custom hook to freeze the backbone before training starts
+
+
+
 def modify_config_file(cfg, data_root, img_dir, ann_dir, save_model_path):
+
+
+    cfg.train_cfg = dict(custom_hooks=[dict(type='CustomHook', func=freeze_model_backbone)])
+
     cfg.crop_size = (512, 512)
     cfg.model.data_preprocessor.size = cfg.crop_size
     # cfg.model.backbone.norm_cfg =  cfg.norm_cfg
@@ -52,8 +65,12 @@ def modify_config_file(cfg, data_root, img_dir, ann_dir, save_model_path):
         # dict(type='CLAHE'),
         # dict(type='Normalize', **img_norm_cfg),
         dict(type='RandomFlip', prob=0.5),
-        dict(type='PackSegInputs')
+        dict(type='PackSegInputs'),
+        dict(custom_hooks=custom_hooks)
     ]
+
+
+
 
     cfg.test_pipeline = [
         dict(type='LoadImageFromFile'),
