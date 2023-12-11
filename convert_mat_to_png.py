@@ -30,7 +30,7 @@ def main(fpath, save_path):
     """
 
     save_path_image = f'{save_path}/images/'
-    save_path_label = f'{save_path}/multi_label/'
+    save_path_label = f'{save_path}/manualFluid2/'
 
     if not os.path.exists(save_path_image):
         os.makedirs(save_path_image)
@@ -50,7 +50,7 @@ def main(fpath, save_path):
 
         for index in range(mat_data["images"].shape[2]):
 
-            label_slice = mat_data["manualFluid1"][:, :, index]
+            label_slice = mat_data["manualFluid2"][:, :, index]
             label_slice = nan_to_num(label_slice)
 
             if check_for_nonzero(label_slice):
@@ -63,8 +63,8 @@ def main(fpath, save_path):
                 image.save(f"{save_path_image}/Subject_{id}_{index}.png")
 
                 #Convert the label image to binary label
-                # label_slice[label_slice != 0] = 1
-                label = Image.fromarray(label_slice.astype(np.uint8))
+                label_slice[label_slice != 0] = 1
+                label = Image.fromarray(label_slice.astype(bool))
                 label.save(f"{save_path_label}/Subject_{id}_{index}.png")
 
 
