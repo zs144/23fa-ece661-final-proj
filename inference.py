@@ -1,45 +1,14 @@
 import os
-from pathlib import Path
-from mmseg.apis import init_model, inference_model, show_result_pyplot
 import matplotlib.pyplot as plt
 import mmcv
 from mmseg.apis import init_model, inference_model, show_result_pyplot
 from config_file import modify_config_file
 from mmengine import Config
-import json
 from collections import defaultdict
 import numpy as np
 from PIL import Image
-
-def read_scalar_json(root_dir='.'):
-    for root, dirs, files in os.walk(root_dir):
-        if 'scalars.json' in files:
-            file_path = os.path.join(root, 'scalars.json')
-            try:
-                json_objects = []
-                with open(file_path, 'r') as file:
-                    for line in file:
-                        if line.strip():  # Check if line is not empty
-                            json_object = json.loads(line)
-                            json_objects.append(json_object)
-                return json_objects
-            except json.JSONDecodeError as e:
-                print(f"Error decoding JSON in {file_path}: {e}")
-            except Exception as e:
-                print(f"Error reading file {file_path}: {e}")
-
-    return None
-
-def extract_data(json_objects):
-    iter_loss, iter_mIoU, iter_mAcc = [], [], []
-    for obj in json_objects:
-
-        if 'loss' in obj :
-            iter_loss.append((obj['iter'], obj['loss']))
-        if 'mIoU' in obj and 'mAcc' in obj:
-            iter_mIoU.append((obj['step'], obj['mIoU']))
-            iter_mAcc.append((obj['step'], obj['mAcc']))
-    return iter_loss, iter_mIoU, iter_mAcc
+from sklearn.metrics import precision_recall_curve, roc_curve, auc
+from utils import read_scalar_json, extract_data, find_max_mIoU_iterations
 
 # def plot_and_save(data, x_label, y_label, title, filename):
 #     if not data:
@@ -74,7 +43,6 @@ def plot_and_save_averages(all_data, metric_index, metric_name, filename, model_
         plt.ylim(0, 100)
 
     plt.savefig(filename)
-
 
 
 def calculate_average_across_folds(all_data, metric_index):
@@ -141,17 +109,7 @@ def plot_and_save_metric(all_data, metric_index, metric_name, filename):
 
     plt.savefig(filename)
 
-def find_max_mIoU_iterations(all_data):
-    max_mIoU_iterations = {}
 
-    for fold, freeze_data in all_data.items():
-        max_mIoU_iterations[fold] = {}
-        for freeze, metrics in freeze_data.items():
-            iter_mIoU = metrics[1]  # Assuming index 1 is for iter_mIoU
-            max_mIoU = max(iter_mIoU, key=lambda x: x[1])  # Find the tuple with the max mIoU value
-            max_mIoU_iterations[fold][freeze] = max_mIoU[0]  # Store the iteration number
-
-    return max_mIoU_iterations
 
 
 
@@ -174,23 +132,24 @@ def plot_comparison(ground_truth, prediction, save_path, fname):
     image.save(save_path+ fname+'.png')
 
 
-freeze_list = [False, True]
+freeze_list = [ True, False]
 data_root = 'data'
 img_dir = 'images'
 ann_dir = 'labels'
 classes = ('background', 'fluid')
 palette =  [[0, 0, 0], [255,0,0]]
 fold_list = [0, 1, 2, 3, 4]
+pretrained = False
 
 
 model_config = 'mobilenet-v3-d8_lraspp_4xb4-320k_cityscapes-512x1024'
 
 if model_config == 'deeplabv3plus_r50-d8_4xb2-40k_cityscapes-512x1024':
-    preferred_name = 'deeplabv3plus pretrained cityscapes'
+    preferred_name = 'DeepLabv3Plus'
 if model_config == 'mobilenet-v3-d8_lraspp_4xb4-320k_cityscapes-512x1024':
-    preferred_name = 'mobilenet-v3 pretrained cityscapes'
+    preferred_name = 'MobileNetV3'
 if model_config == 'swin-tiny-patch4-window7-in1k-pre_upernet_8xb2-160k_ade20k-512x512':
-    preferred_name = 'swin pretrained cityscapes'
+    preferred_name = 'Swin Tiny'
 
 base_path = '/NAS/user_data/user/ld258/output/work_dirs/'
 
@@ -199,7 +158,7 @@ all_data = {}
 
 for freeze in freeze_list:
 
-    load_model_path = f'{base_path}{model_config}_freeze_{freeze}/'
+    load_model_path = f'{base_path}{model_config}_freeze_{freeze}_pretrained_{pretrained}/'
 
     original_cfg = Config.fromfile(load_model_path + model_config + '.py')
     cfg = modify_config_file(original_cfg, data_root, img_dir, ann_dir, load_model_path, 0 )
@@ -207,7 +166,7 @@ for freeze in freeze_list:
         test_img_path = f'/codebase/data/splits/val_fold_{fold}.txt'
         fnames = open(test_img_path).read().splitlines()
 
-        json_path  = f'{base_path}{model_config}_freeze_{freeze}/fold_{fold}_default_augmentation/'
+        json_path  = f'{base_path}{model_config}_freeze_{freeze}_pretrained_{pretrained}/fold_{fold}_default_augmentation/'
         json_data = read_scalar_json(json_path)
         iter_loss, iter_mIoU, iter_mAcc = extract_data(json_data)
         if fold not in all_data:
@@ -216,7 +175,7 @@ for freeze in freeze_list:
         all_data[fold][freeze] = (iter_loss, iter_mIoU, iter_mAcc)
 
 
-plot_and_save_averages(all_data, 1, 'mIoU', f'{model_config}_average_mIoU_vs_iter.png', preferred_name)
+# plot_and_save_averages(all_data, 1, 'mIoU', f'{model_config}_average_mIoU_vs_iter.png', preferred_name)
 
 
 # Assuming 'all_data' is your nested dictionary containing the data
@@ -232,15 +191,20 @@ for freeze in freeze_list:
 
         iteration_number = max_mIoU_iters[fold][freeze]
 
-        checkpoint_path = f'{base_path}{model_config}_freeze_{freeze}/fold_{fold}_default_augmentation/iter_{iteration_number}.pth'
+        checkpoint_path = f'{base_path}{model_config}_freeze_{freeze}_pretrained_{pretrained}/fold_{fold}_default_augmentation/iter_{iteration_number}.pth'
 
         print (checkpoint_path)
 
 
 
         model = init_model(cfg, checkpoint_path, 'cuda:0')
-        pred_path =  f'/codebase/work_dirs/pred/{model_config}/freeze_{freeze}/fold_{fold}/'
-        overlay_path = f'/codebase/work_dirs/overlay/{model_config}/freeze_{freeze}/fold_{fold}/'
+        pred_path =  f'/codebase/work_dirs/pred/{model_config}/freeze_{freeze}_pretrained_{pretrained}/fold_{fold}/'
+        overlay_path = f'/codebase/work_dirs/overlay/{model_config}/freeze_{freeze}_pretrained_{pretrained}/fold_{fold}/'
+        auc_path  = f'/codebase/work_dirs/{model_config}/'
+        if not os.path.exists(auc_path):
+            os.makedirs(auc_path)
+
+
         if not os.path.exists(pred_path):
             os.makedirs(pred_path)
 
@@ -251,6 +215,10 @@ for freeze in freeze_list:
         ext = '.png'
         threshold = 0.3
 
+        all_gt = []
+        all_preds = []
+
+
         for fname in fnames:
             img = mmcv.imread(fpath+'images/'+ fname + ext)
             gt =  mmcv.imread(fpath+'labels/'+ fname + ext)
@@ -260,6 +228,17 @@ for freeze in freeze_list:
 
             seg_result = result.seg_logits.data
             seg_array = np.array(seg_result.cpu())
+
+            seg_pred = seg_array.squeeze().flatten()
+
+            # Flatten the ground truth
+            gt_flat = gt[:,:,0].astype(bool).flatten()
+
+            all_gt.extend(gt_flat)
+            all_preds.extend(seg_pred)
+
+
+
             seg = seg_array>threshold
             img = Image.fromarray(seg[0,:,:].astype(bool))
             img.save(pred_path+ fname+ext)
@@ -268,11 +247,19 @@ for freeze in freeze_list:
 
 
 
+        # Compute Precision-Recall for this fold
+        precision, recall, _ = precision_recall_curve(all_gt, all_preds)
+        pr_auc = auc(recall, precision)
 
+    # Plot Precision-Recall curve for this fold
+        plt.plot(recall, precision, lw=2, label=f'Fold {fold} (AUC = {pr_auc:.2f})')
 
-
-
-
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.title(f'{preferred_name} Pretrained {pretrained} Freeze {freeze}')
+    plt.legend(loc="lower left")
+    plt.savefig(f'{auc_path}/{preferred_name}_freeze_{freeze}_pretrained_{pretrained}_pr_curve.png')
+    plt.close()
 
 
 
