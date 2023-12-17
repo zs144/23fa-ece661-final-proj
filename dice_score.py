@@ -74,13 +74,18 @@ df_fold1 = df[df['Fold'] == 'fold_1']
 plt.figure(figsize=(12, 7))
 
 # Creating the bar plot
-sns.barplot(data=df_fold1, x='Dataset', y='Dice Score', hue='Method')
+bar_plot = sns.barplot(data=df_fold1, x='Dataset', y='Dice Score', hue='Method')
 
 # Adding labels and title
 plt.title('Comparison of Dice Scores for test set Across Datasets and different methods')
 plt.ylabel('Dice Score')
 plt.xlabel('Dataset')
-
+for p in bar_plot.patches:
+    bar_plot.annotate(format(p.get_height(), '.2f'),
+                      (p.get_x() + p.get_width() / 2., p.get_height()),
+                      ha='center', va='center',
+                      xytext=(0, 9),
+                      textcoords='offset points')
 # Displaying the plot
 save_path = f'D:/projects/phd_assignments/ece661/project/oct_segmentation/work_dirs/comparison_duke_and_umn/dice_plot.svg'
 plt.savefig(save_path, format='svg')
