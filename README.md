@@ -21,6 +21,19 @@ We have utilized the MM-SEGMENTATION framework and PyTorch for training and eval
 - Python
 - Docker (recommended)
 
+## Data Preparation
+
+### Converting OCT Images from .mat to .png
+
+Before training the models, it is necessary to convert the OCT images from their original `.mat` format to `.png`. This is done using the `convert_mat_to_png.py` script.
+
+#### How to Run the Conversion Script
+
+To convert the `.mat` files to `.png` format, run the following command:
+
+```bash
+python convert_mat_to_png.py
+
 ### Running the Project
 
 To run the project, execute the following command:
