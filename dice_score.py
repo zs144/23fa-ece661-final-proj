@@ -26,10 +26,13 @@ def compute_dice_for_folder(pred_folder_path, gt_folder_path):
                 # Load prediction and ground truth
                 pred = np.array(Image.open(pred_path))  # Convert to binary mask
                 gt = np.array(Image.open(gt_path))  # Convert to binary mask
+
+                if len(np.unique(gt))>1:
                 # print ('shape of pred and gt', pred.shape, gt.shape)
                 # Compute Dice score
-                score = dice_score(gt.flatten(), pred.flatten())
-                dice_scores.append(score)
+                    score = dice_score(gt.flatten(), pred.flatten())
+
+                    dice_scores.append(score)
 
     return np.mean(dice_scores)  # Return the average Dice score
 
@@ -61,6 +64,8 @@ for dataset in datasets:
             # results[dataset][method][fold] = avg_dice  # Store the result in the dictionary
 
 df = pd.DataFrame(data, columns=['Dataset', 'Method', 'Fold', 'Dice Score'])
+
+
 # # Save the figure
 # plt.savefig('D:\\projects\\phd_assignments\\ece661\\project\\oct_segmentation\\work_dirs\\comparison_duke_and_umn\\dice_scores_plot.png')
 # plt.close()
@@ -87,7 +92,7 @@ for p in bar_plot.patches:
                       xytext=(0, 9),
                       textcoords='offset points')
 # Displaying the plot
-save_path = f'D:/projects/phd_assignments/ece661/project/oct_segmentation/work_dirs/comparison_duke_and_umn/dice_plot.svg'
+save_path = f'D:/projects/phd_assignments/ece661/project/oct_segmentation/work_dirs/comparison_duke_and_umn/dice_plot_no_zero_background.svg'
 plt.savefig(save_path, format='svg')
 plt.show()
 
