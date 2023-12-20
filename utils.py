@@ -12,6 +12,7 @@ from PIL import Image
 from sklearn.metrics import precision_recall_curve, roc_curve, auc
 import json
 import os
+import matplotlib.pyplot as plt
 
 
 def create_train_val_split(data_root, ann_dir, n_splits=5):
@@ -228,9 +229,16 @@ def plot_and_save_metric(all_data, metric_index, metric_name, filename):
 
     plt.savefig(filename)
 
+
 def dice_score(y_true, y_pred):
+    eps = 1e-8
     intersection = np.sum(y_true * y_pred)
-    return (2. * intersection) / (np.sum(y_true) + np.sum(y_pred))
+
+    # Check if both y_true and y_pred are all zeros
+    if np.sum(y_true) == 0 and np.sum(y_pred) == 0:
+        return 1.0
+    else:
+        return (2. * intersection) / (np.sum(y_true) + np.sum(y_pred) + eps)
 
 
 
