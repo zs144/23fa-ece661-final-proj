@@ -1,0 +1,26 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: >-
+  Intra-retinal cyst segmentation in optical coherence
+  tomography images via transfer learning
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Lavsen
+    family-names: Dahal
+    email: ld258@duke.edu
+  - given-names: Fong Chi
+    family-names: Ho
+    email: fh82@duke.edu
+  - given-names: Zion
+    family-names: Sheng
+    email: zs144@duke.edu
+abstract: >-
+  This repository contains the source code and related
+  materials for the ECE 661 final project by Lavsen Dahal,
+  Ken Ho, and Zion Sheng.
+license: MIT
